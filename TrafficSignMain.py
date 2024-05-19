@@ -17,12 +17,12 @@ from keras.preprocessing.image import ImageDataGenerator
 
 ################# Parameters #####################
 # Parameters
-path = "myData"
+path = "Train"
 labelFile = 'labels.csv'
 batch_size_val = 30
 steps_per_epoch_val = 2000
 epochs_val = 10
-imageDimesions = (32, 32, 3)
+imageDimesions = (32, 32, 3) # keep the color channel
 testRatio = 0.2
 validationRatio = 0.2
 
@@ -38,6 +38,7 @@ for x in range(0, len(myList)):
     myPicList = os.listdir(path + "/" + str(count))
     for y in myPicList:
         curImg = cv2.imread(path + "/" + str(count) + "/" + y)
+        curImg = cv2.resize(curImg, imageDimesions[:2]) # resize the image to the required dimensions
         images.append(curImg)
         classNo.append(count)
     print(count, end=" ")
@@ -75,7 +76,7 @@ fig.tight_layout()
 for i in range(cols):
     for j, row in data.iterrows():
         x_selected = X_train[y_train == j]
-        axs[j][i].imshow(x_selected[random.randint(0, len(x_selected) - 1), :, :], cmap=plt.get_cmap("gray"))
+        axs[j][i].imshow(x_selected[random.randint(0, len(x_selected) - 1), :, :], cmap=plt.get_cmap("viridis")) # use viridis colormap to display color images
         axs[j][i].axis("off")
         if i == 2:
             axs[j][i].set_title(str(j) + "-" + row["Name"])
@@ -92,21 +93,13 @@ plt.show()
 
 # Preprocessing the images
 def preprocess(img):
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = cv2.equalizeHist(img)
-    img = img/255
+    img = img / 255.0 # normalize the pixel values to [0, 1]
     return img
 
 X_train = np.array([preprocess(img) for img in X_train])
 X_validation = np.array([preprocess(img) for img in X_validation])
 X_test = np.array([preprocess(img) for img in X_test])
- 
-############################### ADD A DEPTH OF 1
-X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], X_train.shape[2], 1)
-X_validation = X_validation.reshape(X_validation.shape[0], X_validation.shape[1], X_validation.shape[2], 1)
-X_test=X_test.reshape(X_test.shape[0],X_test.shape[1],X_test.shape[2],1)
- 
- 
+
 ############################### AUGMENTATAION OF IMAGES: TO MAKEIT MORE GENERIC
 dataGen= ImageDataGenerator(width_shift_range=0.1,   # 0.1 = 10%     IF MORE THAN 1 E.G 10 THEN IT REFFERS TO NO. OF  PIXELS EG 10 PIXELS
                             height_shift_range=0.1,
@@ -116,16 +109,16 @@ dataGen= ImageDataGenerator(width_shift_range=0.1,   # 0.1 = 10%     IF MORE THA
 dataGen.fit(X_train)
 batches= dataGen.flow(X_train,y_train,batch_size=20)  # REQUESTING DATA GENRATOR TO GENERATE IMAGES  BATCH SIZE = NO. OF IMAGES CREAED EACH TIME ITS CALLED
 X_batch,y_batch = next(batches)
- 
+
 # TO SHOW AGMENTED IMAGE SAMPLES
 fig,axs=plt.subplots(1,15,figsize=(20,5))
 fig.tight_layout()
- 
+
 for i in range(15):
-    axs[i].imshow(X_batch[i].reshape(imageDimesions[0],imageDimesions[1]))
+    axs[i].imshow(X_batch[i].reshape(imageDimesions[0],imageDimesions[1], 3)) # display color images
     axs[i].axis('off')
 plt.show()
- 
+
 # Convert class labels to one-hot encoded vectors
 y_train = to_categorical(y_train, num_classes)
 y_validation = to_categorical(y_validation, num_classes)
@@ -134,7 +127,7 @@ y_test = to_categorical(y_test, num_classes)
 ############################### CONVOLUTION NEURAL NETWORK MODEL
 # Define the model architecture
 model = Sequential()
-model.add(Conv2D(60, (5, 5), input_shape=(imageDimesions[0], imageDimesions[1], 1), activation='relu'))
+model.add(Conv2D(60, (5, 5), input_shape=(imageDimesions[0], imageDimesions[1], 3), activation='relu')) # keep the color channel
 model.add(Conv2D(60, (5, 5), activation='relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Conv2D(30, (3, 3), activation='relu'))
@@ -159,10 +152,9 @@ history = model.fit(train_dataset, steps_per_epoch=steps_per_epoch_val, epochs=e
 score = model.evaluate(X_test, y_test, verbose=0)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
- 
- 
+
 # STORE THE MODEL AS A PICKLE OBJECT
-pickle_out= open("model_trained.p","wb")  # wb = WRITE BYTE
+pickle_out= open("model_trained_new.p","wb")  # wb = WRITE BYTE
 pickle.dump(model,pickle_out)
 pickle_out.close()
 cv2.waitKey(0)
