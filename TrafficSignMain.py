@@ -14,6 +14,7 @@ import os
 import pandas as pd
 import random
 from keras.preprocessing.image import ImageDataGenerator
+import seaborn as sns  # For confusion matrix
 
 ################# Parameters #####################
 # Parameters
@@ -148,11 +149,56 @@ train_dataset = train_dataset.shuffle(len(X_train)).repeat().batch(batch_size_va
 history = model.fit(train_dataset, steps_per_epoch=steps_per_epoch_val, epochs=epochs_val, 
                     validation_data=(X_validation, y_validation), shuffle=1)
 
+# Plotting the training and validation loss
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Loss vs. Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+
+# Plotting the training and validation accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Accuracy vs. Epochs')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+
+plt.tight_layout()  # Adjust the subplots to avoid overlapping
+plt.show()
 # Evaluate the model on the test set
 score = model.evaluate(X_test, y_test, verbose=0)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])
 
+# Confusion Matrix
+y_pred = model.predict(X_test)
+y_pred_classes = np.argmax(y_pred, axis=1)
+y_true = np.argmax(y_test, axis=1)
+confusion_mtx = tf.math.confusion_matrix(y_true, y_pred_classes)
+
+# Plot
+plt.figure(figsize=(10, 8))  # Set the figure size
+sns.set(font_scale=1.4)    # Adjust font size 
+
+# Create the heatmap with custom colors
+sns.heatmap(confusion_mtx, annot=True, fmt='d', cmap='YlOrRd', # Change color scheme to match
+            cbar=False,    # Remove color bar
+            xticklabels=data['Name'], yticklabels=data['Name'],
+            linewidths=2, linecolor='gray')  # Add cell borders
+
+# Add axis labels
+plt.xlabel('Predicted Condition', fontsize=16)
+plt.ylabel('Actual Condition', fontsize=16)
+
+# Add title
+plt.title('Confusion Matrix', fontsize=18)
+
+plt.show()
 # STORE THE MODEL AS A PICKLE OBJECT
 pickle_out= open("model_trained_new.p","wb")  # wb = WRITE BYTE
 pickle.dump(model,pickle_out)

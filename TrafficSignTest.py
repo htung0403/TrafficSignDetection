@@ -9,22 +9,43 @@ class TrafficSignRecognitionApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Traffic Sign Recognition App")
-        self.root.geometry("1000x600")
-        
+        self.root.geometry("1200x700")
+
         # Create a frame for the video feed
         self.video_frame = tk.Frame(self.root, width=900, height=500)
         self.video_frame.grid(row=1, column=1)
 
+        # UI Frame with right margin
+        self.ui_frame = tk.Frame(self.root, width=400, height=600, bg="#E6E6E6", bd=2, relief="raised")
+        self.ui_frame.grid(row=1, column=2, sticky="nsew", padx=10)  # Add padding on the right
+
+        # UI Canvas
+        self.ui_canvas = tk.Canvas(self.ui_frame, width=400, height=600, bg="#E6E6E6")
+        self.ui_canvas.pack(fill="both", expand=True)
+
+        # Add labels for group and prediction
+        self.group_label = tk.Label(self.ui_canvas, bg="#E6E6E6", text="GROUP 9 \n Diệp Hoài An - 21110001 \n Võ Hoàng Tùng - 21110811 \n Trần Phi Tường - 21110108", font=("Raleway", 15, "bold"), fg="black")
+        self.group_label.place(relx=0.5, rely=0, anchor="n")
+
+        # Prediction section
+        prediction_frame = tk.Frame(self.ui_canvas, bg="#E6E6E6", bd=1, relief="solid")
+        prediction_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        prediction_label = tk.Label(prediction_frame,bg="#E6E6E6", text="Predicted Class:", font=("Helvetica", 15, "bold"), fg="black")
+        prediction_label.pack(side="top", padx=10, pady=5)
+
+        self.prediction_value_label = tk.Label(prediction_frame, bg="#E6E6E6", text="", font=("Helvetica", 14, "bold"), fg="green")
+        self.prediction_value_label.pack(side="top", padx=10, pady=5)
+
         
-        self.app_name_label = tk.Label(self.root, text="TRAFFIC SIGN DETECTION", font=("Arial", 30))
+        self.app_name_label = tk.Label(self.root, text="TRAFFIC SIGN DETECTION", font=("Rockwell Extra Bold", 30))
         self.app_name_label.grid(row=0, column=1)
         
         # Create a button to start the program
-        self.start_button = tk.Button(self.root, text="Start", font=("Helvetica", 16), height=3, width=10, command=self.start_program)
+        self.start_button = tk.Button(self.root, text="Start", font=("Baskerville Old Face", 25, "bold"),bg= '#FFFBDA', height=2, width=10, command=self.start_program)
         self.start_button.grid(row=1, column=1)
 
         
-
         # Load the model
         with open('model_trained_new.p', 'rb') as file:
             self.model = pickle.load(file)
@@ -36,6 +57,7 @@ class TrafficSignRecognitionApp:
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_rowconfigure(1, weight=3)
         self.root.grid_rowconfigure(2, weight=1)
+        
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=3)
         self.root.grid_columnconfigure(2, weight=1)
@@ -43,10 +65,7 @@ class TrafficSignRecognitionApp:
     def start_program(self):
         self.start_button.config(state="disabled")
         self.start_button.grid_remove()
-        
-        self.label = tk.Label(self.root, text="No video is playing", font=("Helvetica", 16))
-        self.label.grid(row=3, column=1)
-        
+                
         # Create a label for the video feed
         self.video_label = tk.Label(self.video_frame, text="Video Feed")
         self.video_label.pack()
@@ -209,7 +228,7 @@ class TrafficSignRecognitionApp:
 
 
     def display_prediction(self, class_name, probability):
-        self.label.config(text=f"Predicted class: {class_name} (Probability: {probability:.2f}%)")
+        self.prediction_value_label.config(text=f"{class_name}\n Probability: {probability*100:.2f}%")
 
 if __name__ == "__main__":
     root = tk.Tk()
